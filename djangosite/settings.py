@@ -26,8 +26,6 @@ SECRET_KEY = '2zft0r4b0suc%bi3+hd8x09z_j5-m&qog+%$p_fb=v7g-#zlf8'
 DEBUG = True
 
 ALLOWED_HOSTS = ['45.76.90.175', '127.0.0.1', 'localhost', 'www.chenjunqian.com']
-# ALLOWED_HOSTS = ["chenjunqian.com"]
-# ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -38,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'wechathelper'
 ]
 
 MIDDLEWARE = [
@@ -76,11 +75,11 @@ WSGI_APPLICATION = 'djangosite.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': 'localhost',
+        'PORT': '3306',
+    },
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -104,9 +103,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-CN'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 

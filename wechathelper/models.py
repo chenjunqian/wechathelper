@@ -24,4 +24,3 @@ class WeatherForecastData(models.Model):
     fengli = models.CharField(max_length=30)
     weather_type = models.CharField(max_length=30)
     notice = models.CharField(max_length=30)
-
