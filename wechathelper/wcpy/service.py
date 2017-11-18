@@ -4,6 +4,8 @@ import time
 import datetime
 import logging
 import requests
+os.environ["DJANGO_SETTINGS_MODULE"] = 'djangosite.settings'
+django.setup()
 from wechathelper.models import WeatherData, WeatherForecastData
 
 class Weather(object):
@@ -43,7 +45,7 @@ class Weather(object):
                 wendu = self.weather_data['wendu'],
                 notice = self.weather_data['ganmao']
             )
-            # weather_data.save()
+            weather_data.save()
 
             day = 0
             seconds_of_day = 86400
@@ -63,9 +65,6 @@ class Weather(object):
             self.logger.error(str(response.status_code))
             self.crawl_weather_info(city_name)
             
-
-
-
 
 
 if __name__ == '__main__':
