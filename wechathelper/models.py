@@ -11,9 +11,6 @@ class WeatherData(models.Model):
     pm25 = models.CharField(max_length=30)
     quality = models.CharField(max_length=30)
     wendu = models.IntegerField()
-    high = models.CharField(max_length=30)
-    low = models.CharField(max_length=30) 
-    weather_type = models.CharField(max_length=30)
     notice = models.CharField(max_length=30)
  
 class WeatherForecastData(models.Model):
