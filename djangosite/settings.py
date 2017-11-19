@@ -79,6 +79,9 @@ WSGI_APPLICATION = 'djangosite.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
+        'USER': 'root',
+        'NAME': 'wechathelperdb',
+        'PASSWORD': '@WSXZAQ!',
         'HOST': 'localhost',
         'PORT': '3306',
     },
@@ -106,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
-LANGUAGE_CODE = 'zh-CN'
+LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Asia/Shanghai'
 
@@ -149,7 +152,7 @@ LOGGING = {
         'error': {
             'level':'ERROR',
             'class':'logging.handlers.RotatingFileHandler',
-            'filename': '/sourceDns/log/error.log',
+            'filename': '/home/project/djangosite/log/error.log',
             'maxBytes':1024*1024*5,
             'backupCount': 5,
             'formatter':'standard',
@@ -162,7 +165,7 @@ LOGGING = {
         'request_handler': {
             'level':'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
-            'filename': '/sourceDns/log/script.log', 
+            'filename': '/home/project/djangosite/log/script.log', 
             'maxBytes': 1024*1024*5, 
             'backupCount': 5,
             'formatter':'standard',
@@ -170,7 +173,7 @@ LOGGING = {
         'scprits_handler': {
             'level':'DEBUG',
             'class':'logging.handlers.RotatingFileHandler',
-            'filename':'/sourceDns/log/script.log', 
+            'filename':'/home/project/djangosite/log/script.log', 
             'maxBytes': 1024*1024*5, 
             'backupCount': 5,
             'formatter':'standard',
@@ -204,4 +207,3 @@ LOGGING = {
         }
     } 
 }
-

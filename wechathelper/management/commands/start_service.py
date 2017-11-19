@@ -4,9 +4,18 @@ import time
 import datetime
 import logging
 import requests
-os.environ["DJANGO_SETTINGS_MODULE"] = 'djangosite.settings'
-django.setup()
+from django.core.management.base import BaseCommand, CommandError
 from wechathelper.models import WeatherData, WeatherForecastData
+
+class Command(BaseCommand):
+    '''
+        开启服务使用的命令脚本
+    '''
+
+    def handle(self, *args, **options):
+        weather = Weather()
+        weather.crawl_weather_info('桂林')
+
 
 class Weather(object):
     '''
@@ -24,9 +33,9 @@ class Weather(object):
             爬取天气信息
         '''
         weather_api_url = 'http://www.sojson.com/open/api/weather/json.shtml?city='
-        response = requests.get(weather_api_url+str(city_name)).text
+        response = requests.get(weather_api_url+str(city_name))
         if response.status_code == 200:
-            json_response = json.loads(response)
+            json_response = json.loads(response.text)
             self.weather_data = json_response['data']
             self.forecast = self.weather_data['forecast']
             self.tomorrow_data = self.forecast[0]
@@ -49,26 +58,20 @@ class Weather(object):
 
             day = 0
             seconds_of_day = 86400
-            for item in self.forecast
+            for item in self.forecast:
                 day = day + 1
                 weather_forecast_data = WeatherForecastData(
                     relative_data = weather_data,
-                    date = self.date + day*seconds_of_day
-                    high = item['high']
-                    low = item['low']
-                    fengli = item['fl']
-                    weather_type = item['type']
-                    notice = item['notice']
+                    date = self.date + day*seconds_of_day,
+                    high = item['high'],
+                    low = item['low'],
+                    fengli = item['fl'],
+                    weather_type = item['type'],
+                    notice = item['notice'],
                 )
+
+                weather_forecast_data.save()
 
         else:
             self.logger.error(str(response.status_code))
             self.crawl_weather_info(city_name)
-            
-
-
-if __name__ == '__main__':
-    weather = Weather()
-    weather.crawl_weather_info('桂林')
-    print(weather.tomorrow_data)
-

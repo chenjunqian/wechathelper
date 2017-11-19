@@ -5,7 +5,7 @@ class WeatherData(models.Model):
     '''
         天气数据模型
     '''
-    date = models.IntegerField()
+    date = models.IntegerField(default=None)
     city = models.CharField(max_length=30)
     shidu = models.CharField(max_length=30)
     pm25 = models.CharField(max_length=30)
@@ -15,7 +15,7 @@ class WeatherData(models.Model):
  
 class WeatherForecastData(models.Model):
     relative_data = models.ForeignKey(WeatherData,on_delete=models.CASCADE)
-    date = models.IntegerField()
+    date = models.IntegerField(default=None)
     high = models.CharField(max_length=30)
     low = models.CharField(max_length=30)
     fengli = models.CharField(max_length=30)
