@@ -4,17 +4,36 @@ import time
 import datetime
 import logging
 import requests
-from django.core.management.base import BaseCommand, CommandError
-from wechathelper.models import WeatherData, WeatherForecastData
+from apscheduler.schedulers.background import BackgroundScheduler
+from django.core.management.base import BaseCommand
+from wechathelper.models import WeatherData, WeatherForecastData, UserInfo
 
 class Command(BaseCommand):
     '''
         开启服务使用的命令脚本
     '''
 
+
     def handle(self, *args, **options):
+        scheduler = BackgroundScheduler({
+            'apscheduler.executors.default': {
+                'class': 'apscheduler.executors.pool:ThreadPoolExecutor',
+                'max_workers': '20'
+            },
+            'apscheduler.executors.processpool': {
+                'type': 'processpool',
+                'max_workers': '5'
+            },
+            'apscheduler.timezone': 'Asia/Shanghai',
+        })
         weather = Weather()
-        weather.crawl_weather_info('桂林')
+        scheduler.add_job(
+            weather.run,
+            trigger='cron',
+            day_of_week='1-7',
+            hour=8,
+            id='crawl_weather_info'
+        )
 
 
 class Weather(object):
@@ -75,3 +94,10 @@ class Weather(object):
         else:
             self.logger.error(str(response.status_code))
             self.crawl_weather_info(city_name)
+
+    def run(self):
+        user_city_list = UserInfo.objects.values_list('city',flat=True).distinct()
+        for use_city in user_city_list:
+            self.logger.info(use_city)
+            # self.crawl_weather_info(use_city)
+

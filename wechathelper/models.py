@@ -14,6 +14,9 @@ class WeatherData(models.Model):
     notice = models.CharField(max_length=30)
  
 class WeatherForecastData(models.Model):
+    '''
+        未来几天的天气情况
+    '''
     relative_data = models.ForeignKey(WeatherData,on_delete=models.CASCADE)
     date = models.IntegerField(default=None)
     high = models.CharField(max_length=30)
@@ -21,3 +24,14 @@ class WeatherForecastData(models.Model):
     fengli = models.CharField(max_length=30)
     weather_type = models.CharField(max_length=30)
     notice = models.CharField(max_length=30)
+
+
+class UserInfo(models.Model):
+    '''
+        用户信息，主要存储用户的城市，接受哪些服务等
+    '''
+    wechat_id = models.CharField(max_length=30)
+    city = models.CharField(max_length=30)
+    is_get_weather = models.BooleanField(default=True)
+    weather_service_time = models.IntegerField(default=None)
+    no_need_service = models.BooleanField(default=False)
