@@ -13,7 +13,6 @@ class Command(BaseCommand):
         开启服务使用的命令脚本
     '''
 
-
     def handle(self, *args, **options):
         scheduler = BackgroundScheduler({
             'apscheduler.executors.default': {
@@ -31,7 +30,7 @@ class Command(BaseCommand):
             weather.run,
             trigger='cron',
             day_of_week='1-7',
-            hour=8,
+            hour=7,
             id='crawl_weather_info'
         )
 
@@ -96,8 +95,8 @@ class Weather(object):
             self.crawl_weather_info(city_name)
 
     def run(self):
-        user_city_list = UserInfo.objects.values_list('city',flat=True).distinct()
+        user_city_list = list(UserInfo.objects.values_list('city',flat=True).distinct())
         for use_city in user_city_list:
             self.logger.info(use_city)
-            # self.crawl_weather_info(use_city)
+            self.crawl_weather_info(use_city)
 

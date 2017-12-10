@@ -35,3 +35,14 @@ class UserInfo(models.Model):
     is_get_weather = models.BooleanField(default=True)
     weather_service_time = models.IntegerField(default=None)
     no_need_service = models.BooleanField(default=False)
+
+
+class WeatherTask(models.Model):
+    '''
+        用户的天气定时任务
+    '''
+    created_time = models.DateTimeField(auto_now_add=True)
+    user_id = models.IntegerField(default=None)
+    task_time_minute = models.IntegerField(default=None)
+    task_time_hour = models.IntegerField(default=None)
+
