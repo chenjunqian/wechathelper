@@ -37,7 +37,7 @@ class WxHelper(object):
         '''
             登录微信，返回一个二维码
         '''
-        self.wechat_helper = Bot(cache_path=True, qr_path='/')
+        self.wechat_helper = Bot()
 
     def send_weather_info(self):
         '''

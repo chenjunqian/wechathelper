@@ -1,4 +1,5 @@
 
+import os
 import json
 import time
 import datetime
@@ -7,6 +8,7 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.core.management.base import BaseCommand
 from wechathelper.models import WeatherData, WeatherForecastData, UserInfo
+from wxpy import *
 
 class Command(BaseCommand):
     '''
@@ -26,13 +28,39 @@ class Command(BaseCommand):
             'apscheduler.timezone': 'Asia/Shanghai',
         })
         weather = Weather()
+        wechat_bot = Bot(
+            console_qr=-1,
+            cache_path=True
+        )
+        wechat_bot.self.send('bot is on...')
+
         scheduler.add_job(
-            weather.run,
+            weather.run_my_family_server,
             trigger='cron',
             day_of_week='1-7',
-            hour=7,
+            hour='7',
             id='crawl_weather_info'
         )
+
+        scheduler.add_job(
+            weather.send_messege,
+            args=[wechat_bot],
+            trigger='cron',
+            day_of_week='1-7',
+            hour=8,
+            id='my_test_job'
+        )
+
+        scheduler.start()
+
+        print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
+
+        try:
+            while True:
+                time.sleep(1000)
+        except(KeyboardInterrupt, SystemExit):
+            scheduler.shutdown()
+            print(' Exit The Job!')
 
 
 class Weather(object):
@@ -99,4 +127,20 @@ class Weather(object):
         for use_city in user_city_list:
             self.logger.info(use_city)
             self.crawl_weather_info(use_city)
+
+    # def qr_code_callback(self,uuid, status, qrcode):
+    #     print(
+    #         'uuid : '+str(uuid)+'\n'
+    #         +'status : '+str(status)+'\n'
+    #         +'qrcode : '+str(type(qrcode))+'\n'
+    #     )   
+
+    def run_my_family_server(self):
+        self.crawl_weather_info('桂林')
+        self.crawl_weather_info('上海')
+        self.logger.info('crawl weather info success ! ')
+
+    def send_messege(self, wechat_bot):
+        wechat_bot.self.send('now is the time !!!')
+
 

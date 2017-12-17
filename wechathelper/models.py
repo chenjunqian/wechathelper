@@ -19,21 +19,21 @@ class WeatherForecastData(models.Model):
     '''
     relative_data = models.ForeignKey(WeatherData,on_delete=models.CASCADE)
     date = models.IntegerField(default=None)
-    high = models.CharField(max_length=30)
-    low = models.CharField(max_length=30)
-    fengli = models.CharField(max_length=30)
-    weather_type = models.CharField(max_length=30)
-    notice = models.CharField(max_length=30)
+    high = models.CharField(max_length=100)
+    low = models.CharField(max_length=100)
+    fengli = models.CharField(max_length=100)
+    weather_type = models.CharField(max_length=100)
+    notice = models.CharField(max_length=100)
 
 
 class UserInfo(models.Model):
     '''
         用户信息，主要存储用户的城市，接受哪些服务等
     '''
-    wechat_id = models.CharField(max_length=30)
-    city = models.CharField(max_length=30)
+    wechat_id = models.CharField(max_length=100)
+    user_name = models.CharField(max_length=100)
+    city = models.CharField(max_length=100)
     is_get_weather = models.BooleanField(default=True)
-    weather_service_time = models.IntegerField(default=None)
     no_need_service = models.BooleanField(default=False)
 
 
@@ -43,6 +43,7 @@ class WeatherTask(models.Model):
     '''
     created_time = models.DateTimeField(auto_now_add=True)
     user_id = models.IntegerField(default=None)
+    user_name = models.CharField(max_length=100)
     task_time_minute = models.IntegerField(default=None)
     task_time_hour = models.IntegerField(default=None)
 
