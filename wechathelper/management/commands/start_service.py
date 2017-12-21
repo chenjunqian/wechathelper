@@ -27,18 +27,20 @@ class Command(BaseCommand):
             },
             'apscheduler.timezone': 'Asia/Shanghai',
         })
+
         weather = Weather()
         wechat_bot = Bot(
             console_qr=-1,
             cache_path=True
         )
+
         wechat_bot.self.send('bot is on...')
 
         scheduler.add_job(
             weather.run_my_family_server,
             trigger='cron',
-            day_of_week='1-7',
-            hour='7',
+            hour=7,
+            minute=30,
             id='crawl_weather_info'
         )
 
@@ -46,8 +48,8 @@ class Command(BaseCommand):
             weather.send_messege,
             args=[wechat_bot],
             trigger='cron',
-            day_of_week='1-7',
             hour=8,
+            minute=00,
             id='my_test_job'
         )
 
@@ -90,7 +92,16 @@ class Weather(object):
                     json_response['date'],
                     "%Y%m%d").timetuple()
                 )
-            print(self.date)
+            try:
+                try_data = WeatherData.objects.filter(date=self.date)[0]
+            except (WeatherData.DoesNotExist, IndexError) as e:
+                try_data=None
+                self.logger.info(e)
+            
+            if try_data is not None:
+                self.logger.info('The data is exist')
+                return
+
             weather_data = WeatherData(
                 date = self.date,
                 city = city_name,
@@ -128,19 +139,37 @@ class Weather(object):
             self.logger.info(use_city)
             self.crawl_weather_info(use_city)
 
-    # def qr_code_callback(self,uuid, status, qrcode):
-    #     print(
-    #         'uuid : '+str(uuid)+'\n'
-    #         +'status : '+str(status)+'\n'
-    #         +'qrcode : '+str(type(qrcode))+'\n'
-    #     )   
-
     def run_my_family_server(self):
-        self.crawl_weather_info('桂林')
-        self.crawl_weather_info('上海')
+        cities = ('桂林','上海')
+        for city in cities:
+            self.crawl_weather_info(city)
+            time.sleep(5)
         self.logger.info('crawl weather info success ! ')
 
     def send_messege(self, wechat_bot):
-        wechat_bot.self.send('now is the time !!!')
+        wechat_bot.self.send('start to send weather info !!')
+        try:
+            family_group = wechat_bot.groups().search('野猪妈妈')[0]
+        except IndexError:
+            wechat_bot.self.send(str(IndexError))
+            return
+        
+        user = UserInfo.objects.filter(is_get_weather=1).order_by('-id')[0]
+        today_weather_data = WeatherData.objects.filter(city=user.city).order_by('-id')[0]
+        forecast_weather_data = WeatherForecastData.objects.filter(date=today_weather_data.date).order_by('-id')[0]
+        family_group.send(
+            '今天天气预报 : \n'
+            +str(today_weather_data.city)+'\n'
+            +str(forecast_weather_data.weather_type)+'\n'
+            +'温度 : '+str(today_weather_data.wendu)+'\n'
+            +'湿度 : '+str(today_weather_data.shidu)+'\n'
+            +'pm25 : '+str(today_weather_data.pm25)+'\n'
+            +'空气质量 : '+str(today_weather_data.quality)+'\n'
+            +'温馨提示 : '+str(forecast_weather_data.notice)
+        )
+
+    def format_ascii_str(self, string):
+        re_str = ''.join(str(string)).encode('utf-8').strip()
+        return re_str
 
 
