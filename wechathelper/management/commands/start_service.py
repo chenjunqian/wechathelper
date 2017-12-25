@@ -7,6 +7,7 @@ import logging
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.core.management.base import BaseCommand
+from django import db
 from wechathelper.models import WeatherData, WeatherForecastData, UserInfo
 from wxpy import *
 
@@ -39,8 +40,8 @@ class Command(BaseCommand):
         scheduler.add_job(
             weather.run_my_family_server,
             trigger='cron',
-            hour=7,
-            minute=30,
+            hour=6,
+            minute=00,
             id='crawl_weather_info'
         )
 
@@ -48,7 +49,7 @@ class Command(BaseCommand):
             weather.send_messege,
             args=[wechat_bot],
             trigger='cron',
-            hour=8,
+            hour=7,
             minute=00,
             id='my_test_job'
         )
@@ -93,7 +94,7 @@ class Weather(object):
                     "%Y%m%d").timetuple()
                 )
             try:
-                try_data = WeatherData.objects.filter(date=self.date)[0]
+                try_data = WeatherData.objects.filter(date=self.date, city=city_name)[0]
             except (WeatherData.DoesNotExist, IndexError) as e:
                 try_data=None
                 self.logger.info(e)
@@ -111,6 +112,7 @@ class Weather(object):
                 wendu = self.weather_data['wendu'],
                 notice = self.weather_data['ganmao']
             )
+
             weather_data.save()
 
             day = 0
@@ -119,6 +121,7 @@ class Weather(object):
                 day = day + 1
                 weather_forecast_data = WeatherForecastData(
                     relative_data = weather_data,
+                    city = weather_data.city,
                     date = self.date + day*seconds_of_day,
                     high = item['high'],
                     low = item['low'],
@@ -128,6 +131,8 @@ class Weather(object):
                 )
 
                 weather_forecast_data.save()
+
+            db.close_old_connections()
 
         else:
             self.logger.error(str(response.status_code))
@@ -147,26 +152,40 @@ class Weather(object):
         self.logger.info('crawl weather info success ! ')
 
     def send_messege(self, wechat_bot):
-        wechat_bot.self.send('start to send weather info !!')
         try:
             family_group = wechat_bot.groups().search('野猪妈妈')[0]
         except IndexError:
             wechat_bot.self.send(str(IndexError))
             return
         
-        user = UserInfo.objects.filter(is_get_weather=1).order_by('-id')[0]
-        today_weather_data = WeatherData.objects.filter(city=user.city).order_by('-id')[0]
-        forecast_weather_data = WeatherForecastData.objects.filter(date=today_weather_data.date).order_by('-id')[0]
-        family_group.send(
-            '今天天气预报 : \n'
-            +str(today_weather_data.city)+'\n'
-            +str(forecast_weather_data.weather_type)+'\n'
-            +'温度 : '+str(today_weather_data.wendu)+'\n'
-            +'湿度 : '+str(today_weather_data.shidu)+'\n'
-            +'pm25 : '+str(today_weather_data.pm25)+'\n'
-            +'空气质量 : '+str(today_weather_data.quality)+'\n'
-            +'温馨提示 : '+str(forecast_weather_data.notice)
-        )
+        users = UserInfo.objects.filter(
+            user_name='野猪妈妈和三个小野猪'
+        ).order_by('-id')
+
+        for user in users:
+            today_weather_data = WeatherData.objects.filter(
+                city=user.city
+            ).order_by('-id')[0]
+
+            forecast_weather_data = WeatherForecastData.objects.filter(
+                date=today_weather_data.date,
+                city=today_weather_data.city
+            ).order_by('-id')[0]
+
+            family_group.send(
+                '今天天气预报 : \n'
+                +str(today_weather_data.city)+'\n'
+                +str(forecast_weather_data.weather_type)+'\n'
+                +'温度 : '+str(today_weather_data.wendu)+'\n'
+                +'湿度 : '+str(today_weather_data.shidu)+'\n'
+                +'pm25 : '+str(today_weather_data.pm25)+'\n'
+                +'空气质量 : '+str(today_weather_data.quality)+'\n'
+                +'温馨提示 : '+str(forecast_weather_data.notice)
+            )
+
+        db.close_old_connections()
+
+    
 
     def format_ascii_str(self, string):
         re_str = ''.join(str(string)).encode('utf-8').strip()

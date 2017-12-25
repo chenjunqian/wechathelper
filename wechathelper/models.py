@@ -11,13 +11,14 @@ class WeatherData(models.Model):
     pm25 = models.CharField(max_length=30)
     quality = models.CharField(max_length=30)
     wendu = models.IntegerField()
-    notice = models.CharField(max_length=30)
+    notice = models.CharField(max_length=100)
  
 class WeatherForecastData(models.Model):
     '''
         未来几天的天气情况
     '''
     relative_data = models.ForeignKey(WeatherData,on_delete=models.CASCADE)
+    city = models.CharField(max_length=100, blank=True)
     date = models.IntegerField(default=None)
     high = models.CharField(max_length=100)
     low = models.CharField(max_length=100)

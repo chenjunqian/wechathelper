@@ -1,7 +1,8 @@
 
 import os, time, datetime
 from django.core.management.base import BaseCommand
-# from wechathelper.models import WeatherData, WeatherForecastData, UserInfo
+from django.db import connections
+from wechathelper.models import WeatherData, WeatherForecastData, UserInfo
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 import json
@@ -14,24 +15,23 @@ class Command(BaseCommand):
     '''
 
     def handle(self, *args, **options):
-        wechat_bot = Bot(
-            console_qr=-1,
-            cache_path=True
-        )
-        try:
-            family_group = wechat_bot.groups().search('野猪妈妈')[0]
-            family_group.send('测试一下')
-        except IndexError:
-            wechat_bot.self.send(str(IndexError))
-
-        print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
-
-        try:
-            while True:
-                time.sleep(1000)
-        except(KeyboardInterrupt, SystemExit):
-            print(' Exit The Job!')
-
+        user = UserInfo.objects.filter(user_name='野猪妈妈和三个小野猪').order_by('-id')[0]
+        today_weather_data = WeatherData.objects.filter(city=user.city)
+        for data in today_weather_data:
+            print('data :'+'\n')
+            print(data.date)
+            try:
+                forecast_weather_data = WeatherForecastData.objects.filter(
+                    # date=data.date,
+                    relative_data=data
+                ).order_by('id')
+                for item in forecast_weather_data:
+                    print('forecast_weather_data :'+'\n')
+                    print(item.date)
+            except IndexError as e:
+                print('error :'+'\n')
+                print(e)
+            
 
 
 # if __name__ == '__main__':
