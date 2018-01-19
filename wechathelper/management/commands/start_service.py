@@ -5,6 +5,7 @@ import time
 import datetime
 import logging
 import requests
+from bs4 import BeautifulSoup
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.core.management.base import BaseCommand
 from django import db
@@ -13,7 +14,7 @@ from wxpy import *
 
 class Command(BaseCommand):
     '''
-        开启服务使用的命令脚本
+        开启家庭服务使用的命令脚本
     '''
 
     def handle(self, *args, **options):
@@ -41,7 +42,7 @@ class Command(BaseCommand):
             weather.run_my_family_server,
             trigger='cron',
             hour=6,
-            minute=00,
+            minute=36,
             id='crawl_weather_info'
         )
 
@@ -145,10 +146,13 @@ class Weather(object):
             self.crawl_weather_info(use_city)
 
     def run_my_family_server(self):
-        cities = ('桂林','上海')
+        cities = ('桂林','上海','新加坡')
         for city in cities:
+            if city == '新加坡':
+                self.crawl_singapore_weather_info(city)
             self.crawl_weather_info(city)
             time.sleep(5)
+
         self.logger.info('crawl weather info success ! ')
 
     def send_messege(self, wechat_bot):
@@ -177,6 +181,8 @@ class Weather(object):
                 +str(today_weather_data.city)+'\n'
                 +str(forecast_weather_data.weather_type)+'\n'
                 +'温度 : '+str(today_weather_data.wendu)+'\n'
+                +str(forecast_weather_data.high)+'\n'
+                +str(forecast_weather_data.low)+'\n'
                 +'湿度 : '+str(today_weather_data.shidu)+'\n'
                 +'pm25 : '+str(today_weather_data.pm25)+'\n'
                 +'空气质量 : '+str(today_weather_data.quality)+'\n'
@@ -190,5 +196,82 @@ class Weather(object):
     def format_ascii_str(self, string):
         re_str = ''.join(str(string)).encode('utf-8').strip()
         return re_str
+
+    def crawl_singapore_weather_info(self, city_name):
+        
+        HEADERS = {
+            'User-Agent': 'Mozilla/5.0 '+
+                        '(Linux; Android 6.0; Nexus 5 Build/MRA58N)'+
+                        ' AppleWebKit/537.36 (KHTML, like Gecko)'+
+                        ' Chrome/57.0.2950.4 Mobile Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Pragma': "no-cache",
+        }
+
+        try:
+            try_data = WeatherData.objects.filter(date=self.date, city=city_name)[0]
+        except (WeatherData.DoesNotExist, IndexError) as e:
+            try_data=None
+            self.logger.info(e)
+
+        url = 'http://www.weather.com.cn/weather/104010100.shtml'
+        response = requests.get(
+            url,
+            headers=HEADERS
+        )
+        # print(response.text)
+        soup = BeautifulSoup(response.text,'html.parser')
+        weather_list = soup.find_all(
+            'ul',
+            class_='t clearfix'
+        )
+
+        weather_items = weather_list[0].find_all(
+            'li'
+        )
+
+        day = -1
+        seconds_of_day = 86400
+        for item in weather_items:
+            day = day + 1
+            weather_data = WeatherData()
+            if day == 0:
+                wendu = item.find(
+                    'p',
+                    class_='tem'
+                ).find('i').string
+                weather_data = WeatherData(
+                    date = self.date + day*seconds_of_day,
+                    city = city_name,
+                    shidu = '',
+                    pm25 = '',
+                    quality = '',
+                    wendu = wendu,
+                    notice = ''
+                )
+                weather_data.save()
+            else:
+                high = item.find('p', class_='tem').find('span').string
+                low = item.find('p', class_='tem').find('i').string
+                fengli = item.find('p', class_='win').find('i').string
+                weather_type = item.find('p', class_='wea').string
+                weather_forecast_data = WeatherForecastData(
+                    relative_data = weather_data,
+                    city = weather_data.city,
+                    date = self.date + day*seconds_of_day,
+                    high = high,
+                    low = low,
+                    fengli = fengli,
+                    weather_type = weather_type,
+                    notice = '',
+                )
+
+                weather_forecast_data.save()
+
+            db.close_old_connections()
+
+
+
+
 
 

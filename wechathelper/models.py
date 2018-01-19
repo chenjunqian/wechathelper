@@ -48,3 +48,15 @@ class WeatherTask(models.Model):
     task_time_minute = models.IntegerField(default=None)
     task_time_hour = models.IntegerField(default=None)
 
+class TextMessageTask(models.Model):
+    '''
+        用户的文字消息定时任务
+    '''
+    created_time = models.DateTimeField(auto_now_add=True)
+    user_id = models.IntegerField(default=None)
+    user_name = models.CharField(max_length=100)
+    to_user_name = models.CharField(max_length=100)
+    to_user_id = models.IntegerField(default=None)
+    message = models.CharField(max_length=300)
+    task_time_minute = models.IntegerField(default=None)
+    task_time_hour = models.IntegerField(default=None)
