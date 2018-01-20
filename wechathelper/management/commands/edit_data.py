@@ -16,18 +16,19 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
-        # self.add_weather_task()
-        cities = ('桂林','上海')
-        for city in cities:
-            self.add_weather_data(city)
-            time.sleep(5)
+        # self.delete_weather_data()
+        self.add_weather_task()
+        # cities = ('桂林','上海')
+        # for city in cities:
+        #     self.add_weather_data(city)
+        #     time.sleep(5)
 
 
     def add_weather_task(self):
         user = UserInfo()
         user.wechat_id =  '野猪妈妈和三个小野猪'
         user.user_name = '野猪妈妈和三个小野猪'
-        user.city = '上海'
+        user.city = '新加坡'
         user.is_get_weather = True
 
         # weather_task = WeatherTask()
@@ -37,6 +38,10 @@ class Command(BaseCommand):
         # weather_task.task_time_minute = 0
         # weather_task.save()
         user.save()
+
+    def delete_weather_data(self):
+        weather_data = WeatherData.objects.filter(city='')
+        weather_data.delete()
 
     def add_weather_data(self, city_name):
         weather_api_url = 'http://www.sojson.com/open/api/weather/json.shtml?city='

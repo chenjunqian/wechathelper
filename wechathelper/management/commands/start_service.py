@@ -4,6 +4,7 @@ import json
 import time
 import datetime
 import logging
+import re
 import requests
 from bs4 import BeautifulSoup
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -42,7 +43,7 @@ class Command(BaseCommand):
             weather.run_my_family_server,
             trigger='cron',
             hour=6,
-            minute=36,
+            minute=30,
             id='crawl_weather_info'
         )
 
@@ -208,18 +209,19 @@ class Weather(object):
             'Pragma': "no-cache",
         }
 
-        try:
-            try_data = WeatherData.objects.filter(date=self.date, city=city_name)[0]
-        except (WeatherData.DoesNotExist, IndexError) as e:
-            try_data=None
-            self.logger.info(e)
+        # try:
+        #     try_data = WeatherData.objects.filter(date=self.date, city=city_name)[0]
+        # except (WeatherData.DoesNotExist, IndexError) as e:
+        #     try_data=None
+        #     self.logger.info(e)
 
         url = 'http://www.weather.com.cn/weather/104010100.shtml'
         response = requests.get(
             url,
             headers=HEADERS
         )
-        # print(response.text)
+
+        response.encoding = 'UTF-8'
         soup = BeautifulSoup(response.text,'html.parser')
         weather_list = soup.find_all(
             'ul',
@@ -230,43 +232,44 @@ class Weather(object):
             'li'
         )
 
-        day = -1
+        wendu_s = weather_items[0].find(
+            'p',
+            class_='tem'
+        ).find('i').string
+        wendu_i = re.findall('\d+',wendu_s)
+        weather_data = WeatherData(
+            date = self.date,
+            city = city_name,
+            shidu = '',
+            pm25 = '',
+            quality = '',
+            wendu = int(wendu_i[0]),
+            notice = ''
+        )
+        weather_data.save()
+
         seconds_of_day = 86400
+        day = -1
         for item in weather_items:
             day = day + 1
-            weather_data = WeatherData()
             if day == 0:
-                wendu = item.find(
-                    'p',
-                    class_='tem'
-                ).find('i').string
-                weather_data = WeatherData(
-                    date = self.date + day*seconds_of_day,
-                    city = city_name,
-                    shidu = '',
-                    pm25 = '',
-                    quality = '',
-                    wendu = wendu,
-                    notice = ''
-                )
-                weather_data.save()
-            else:
-                high = item.find('p', class_='tem').find('span').string
-                low = item.find('p', class_='tem').find('i').string
-                fengli = item.find('p', class_='win').find('i').string
-                weather_type = item.find('p', class_='wea').string
-                weather_forecast_data = WeatherForecastData(
-                    relative_data = weather_data,
-                    city = weather_data.city,
-                    date = self.date + day*seconds_of_day,
-                    high = high,
-                    low = low,
-                    fengli = fengli,
-                    weather_type = weather_type,
-                    notice = '',
-                )
+                continue
+            high = '最高'+re.findall('\d+',item.find('p', class_='tem').find('span').string)[0]
+            low = '最底'+re.findall('\d+',item.find('p', class_='tem').find('i').string)[0]
+            fengli = item.find('p', class_='win').find('i').string
+            weather_type = item.find('p', class_='wea').string
+            weather_forecast_data = WeatherForecastData(
+                relative_data = weather_data,
+                city = weather_data.city,
+                date = self.date + day*seconds_of_day,
+                high = high,
+                low = low,
+                fengli = fengli,
+                weather_type = weather_type,
+                notice = '',
+            )
 
-                weather_forecast_data.save()
+            weather_forecast_data.save()
 
             db.close_old_connections()
 
