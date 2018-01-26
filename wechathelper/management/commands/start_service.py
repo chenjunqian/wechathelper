@@ -147,11 +147,14 @@ class Weather(object):
             self.crawl_weather_info(use_city)
 
     def run_my_family_server(self):
-        cities = ('桂林','上海','新加坡')
+        cities = ('桂林','上海','新加坡','Orebro')
         for city in cities:
             if city == '新加坡':
                 self.crawl_singapore_weather_info(city)
-            self.crawl_weather_info(city)
+            elif city == 'Orebro':
+                self.crawl_orbro_weather_info(city)
+            else:
+                self.crawl_weather_info(city)
             time.sleep(5)
 
         self.logger.info('crawl weather info success ! ')
@@ -168,9 +171,7 @@ class Weather(object):
         ).order_by('-id')
 
         for user in users:
-            today_weather_data = WeatherData.objects.filter(
-                city=user.city
-            ).order_by('-id')[0]
+            today_weather_data = WeatherData.objects.filter(city=user.city).order_by('-id')[0]
 
             forecast_weather_data = WeatherForecastData.objects.filter(
                 date=today_weather_data.date,
@@ -209,33 +210,22 @@ class Weather(object):
             'Pragma': "no-cache",
         }
 
-        # try:
-        #     try_data = WeatherData.objects.filter(date=self.date, city=city_name)[0]
-        # except (WeatherData.DoesNotExist, IndexError) as e:
-        #     try_data=None
-        #     self.logger.info(e)
+        try:
+            try_data = WeatherData.objects.filter(date=self.date, city=city_name)[0]
+        except (WeatherData.DoesNotExist, IndexError) as e:
+            try_data=None
+            self.logger.info(e)
 
         url = 'http://www.weather.com.cn/weather/104010100.shtml'
-        response = requests.get(
-            url,
-            headers=HEADERS
-        )
+        response = requests.get(url, headers=HEADERS)
 
         response.encoding = 'UTF-8'
         soup = BeautifulSoup(response.text,'html.parser')
-        weather_list = soup.find_all(
-            'ul',
-            class_='t clearfix'
-        )
+        weather_list = soup.find_all('ul', class_='t clearfix')
 
-        weather_items = weather_list[0].find_all(
-            'li'
-        )
+        weather_items = weather_list[0].find_all('li')
 
-        wendu_s = weather_items[0].find(
-            'p',
-            class_='tem'
-        ).find('i').string
+        wendu_s = weather_items[0].find('p', class_='tem').find('i').string
         wendu_i = re.findall('\d+',wendu_s)
         weather_data = WeatherData(
             date = self.date,
@@ -254,8 +244,8 @@ class Weather(object):
             day = day + 1
             if day == 0:
                 continue
-            high = '最高'+re.findall('\d+',item.find('p', class_='tem').find('span').string)[0]
-            low = '最底'+re.findall('\d+',item.find('p', class_='tem').find('i').string)[0]
+            high = '最高 '+re.findall('\d+',item.find('p', class_='tem').find('span').string)[0]+'°C'
+            low = '最底 '+re.findall('\d+',item.find('p', class_='tem').find('i').string)[0]+'°C'
             fengli = item.find('p', class_='win').find('i').string
             weather_type = item.find('p', class_='wea').string
             weather_forecast_data = WeatherForecastData(
@@ -273,7 +263,78 @@ class Weather(object):
 
             db.close_old_connections()
 
+    def crawl_orbro_weather_info(self, city_name):
+        
+        HEADERS = {
+            'User-Agent': 'Mozilla/5.0 '+
+                        '(Linux; Android 6.0; Nexus 5 Build/MRA58N)'+
+                        ' AppleWebKit/537.36 (KHTML, like Gecko)'+
+                        ' Chrome/57.0.2950.4 Mobile Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Pragma': "no-cache",
+        }
 
+        try:
+            try_data = WeatherData.objects.filter(date=self.date, city=city_name)[0]
+        except (WeatherData.DoesNotExist, IndexError) as e:
+            try_data=None
+            self.logger.info(e)
+
+        url = 'https://www.accuweather.com/en/se/orebro/314339/daily-weather-forecast/314339?day=1'
+        response = requests.get(
+            url,
+            headers=HEADERS
+        )
+
+        response.encoding = 'UTF-8'
+        soup = BeautifulSoup(response.text,'html.parser')
+        feed_list = soup.find_all('div', class_='panel-list',)[1]
+
+        weather_info_list = feed_list.find_all('div', class_='bg')
+
+        today_weather_info = weather_info_list[0]
+
+        wendu = today_weather_info.find('span', class_='large-temp').string.replace('°','')
+
+        weather_data = WeatherData(
+            date = self.date,
+            city = city_name,
+            shidu = '',
+            pm25 = '',
+            quality = '',
+            wendu = int(wendu),
+            notice = ''
+        )
+        weather_data.save()
+
+        seconds_of_day = 86400
+        day = 0
+        for weather_item in weather_info_list:
+            try:
+                low = weather_item.find('span', class_='small-temp').string
+                low = low.replace('/','')
+            except AttributeError as error:
+                continue
+
+            weather_type = weather_item.find('span', class_='cond').string
+            high = weather_item.find('span', class_='large-temp').string
+
+            weather_forecast_data = WeatherForecastData(
+                relative_data = weather_data,
+                city = weather_data.city,
+                date = self.date + day*seconds_of_day,
+                high = high,
+                low = low,
+                fengli = '',
+                weather_type = weather_type,
+                notice = '',
+            )
+
+            weather_forecast_data.save()
+
+            db.close_old_connections()
+
+        
 
 
 

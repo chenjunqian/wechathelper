@@ -1,1 +1,3 @@
 djangosite/settings.py
+wechathelper/management/commands/test.py
+wechathelper/management/commands/edit_data.py

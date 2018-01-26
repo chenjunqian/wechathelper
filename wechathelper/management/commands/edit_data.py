@@ -28,7 +28,7 @@ class Command(BaseCommand):
         user = UserInfo()
         user.wechat_id =  '野猪妈妈和三个小野猪'
         user.user_name = '野猪妈妈和三个小野猪'
-        user.city = '新加坡'
+        user.city = 'Orebro'
         user.is_get_weather = True
 
         # weather_task = WeatherTask()
