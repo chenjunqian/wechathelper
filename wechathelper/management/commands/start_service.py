@@ -311,13 +311,13 @@ class Weather(object):
         day = 0
         for weather_item in weather_info_list:
             try:
-                low = weather_item.find('span', class_='small-temp').string
+                low = '最低 '+weather_item.find('span', class_='small-temp').string+'C'
                 low = low.replace('/','')
             except AttributeError as error:
                 continue
 
             weather_type = weather_item.find('span', class_='cond').string
-            high = weather_item.find('span', class_='large-temp').string
+            high = '最高 '+weather_item.find('span', class_='large-temp').string+'C'
 
             weather_forecast_data = WeatherForecastData(
                 relative_data = weather_data,
