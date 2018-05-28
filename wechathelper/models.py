@@ -60,3 +60,4 @@ class TextMessageTask(models.Model):
     message = models.CharField(max_length=300)
     task_time_minute = models.IntegerField(default=None)
     task_time_hour = models.IntegerField(default=None)
+    cancel_task = models.BooleanField(default=False)
